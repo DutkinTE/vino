@@ -1,0 +1,12 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+python-multipart>=0.0.9
+python-dotenv>=1.0
+numpy>=1.26
+pillow>=10.0
+opencv-python-headless>=4.9
+transformers>=4.45
+accelerate>=1.0
+ultralytics>=8.3
+psycopg[binary]>=3.2
+# Install torch separately using the CPU/CUDA build selected for this machine.

@@ -1,0 +1,26 @@
+<h2>Выберите композицию мобильного сканера</h2>
+<p class="subtitle">Оба варианта работают с live-камерой и одним текущим результатом. Кликните тот, который ближе.</p>
+
+<div class="cards">
+  <div class="card" data-choice="focus" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#160f10;padding:18px;min-height:430px;display:flex;flex-direction:column;gap:14px;color:#f6eee3;border-radius:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c9a88e"><span>Vino / scan</span><span>● live</span></div>
+      <div style="flex:1;border:1px solid #d4a872;border-radius:20px;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#291b1d,#100c0d)">
+        <div style="width:58%;height:66%;border:1px solid rgba(246,238,227,.65);border-radius:52% 52% 18% 18%;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#e8d4bf">Наведите<br>этикетку сюда</div>
+        <div style="position:absolute;top:14px;left:14px;right:14px;height:1px;background:#d4a872"></div>
+        <div style="position:absolute;bottom:14px;left:14px;right:14px;height:1px;background:#d4a872"></div>
+      </div>
+      <div style="background:#f6eee3;color:#211517;border-radius:15px;padding:14px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#9a6b52">Ищу совпадение</div><div style="font-family:Georgia,serif;font-size:22px;margin-top:5px">Держите бутылку в рамке</div><div style="font-size:12px;margin-top:8px;color:#745b55">Результат появится автоматически</div></div>
+    </div>
+    <div class="card-body"><h3>A — Фокус на камере</h3><p>Максимальная площадь live-превью. Результат появляется компактной панелью снизу и не закрывает бутылку.</p></div>
+  </div>
+
+  <div class="card" data-choice="result" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#eee4d7;padding:18px;min-height:430px;display:flex;flex-direction:column;gap:14px;color:#241719;border-radius:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#875849"><span>Vino / scan</span><span style="color:#457050">● ready</span></div>
+      <div style="height:220px;border-radius:18px;background:linear-gradient(145deg,#665052,#21181a);position:relative;display:flex;align-items:center;justify-content:center;color:#f6eee3;font-size:11px"><div style="width:32%;height:72%;border:1px solid #e7c18f;border-radius:48% 48% 16% 16%;display:flex;align-items:center;justify-content:center;text-align:center">камера</div><div style="position:absolute;inset:15px;border:1px solid rgba(246,238,227,.5);border-radius:13px"></div></div>
+      <div style="background:#211517;color:#f6eee3;border-radius:15px;padding:15px;box-shadow:0 12px 24px rgba(50,30,30,.14)"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#d9a86e">Найдено • 92%</div><div style="font-family:Georgia,serif;font-size:23px;margin-top:5px">Красное вино</div><div style="font-size:12px;color:#d6c1b0;margin-top:7px">Красный · Италия · Винодельня</div><button style="margin-top:13px;border:0;border-radius:999px;padding:9px 14px;background:#e7c18f;color:#241719;font-weight:700">Сканировать снова</button></div>
+    </div>
+    <div class="card-body"><h3>B — Результат на первом плане</h3><p>Камера компактнее, зато карточка найденного вина крупнее и сразу пригодна для чтения.</p></div>
+  </div>
+</div>

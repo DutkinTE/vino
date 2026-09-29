@@ -1,0 +1,2 @@
+data/reference/embedding_comparison_reference.csv filter=lfs diff=lfs merge=lfs -text
+models/siglip2_finetuned.pt filter=lfs diff=lfs merge=lfs -text

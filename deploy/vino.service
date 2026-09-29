@@ -1,0 +1,17 @@
+[Unit]
+Description=Vino Scan FastAPI backend
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vino
+EnvironmentFile=/opt/vino/.env
+Environment=HF_HOME=/opt/vino/.cache/huggingface
+ExecStart=/opt/vino/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 --workers 1
+Restart=always
+RestartSec=5
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
