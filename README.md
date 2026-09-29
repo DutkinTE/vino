@@ -2,12 +2,14 @@
 
 FastAPI service that follows the inference path from `unified_siglip_bottle_comparison.ipynb`: optionally detects a bottle and label, creates a fine-tuned SigLIP image embedding, and returns the five closest product classes. Similarity is a cosine similarity score, not a probability.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the image-processing pipeline, component boundaries, retrieval backends, and response flow.
+
 ## Put model and reference files here
 
 - `models/siglip2_finetuned.pt`: fine-tuned SigLIP `state_dict` checkpoint used by the notebook. It must match `google/siglip2-base-patch16-384`.
 - `models/bottle/bottle_detector_best.pt`: optional YOLO `detect` weights for bottle cropping.
 - `models/label_pose_best.pt`: optional YOLO `pose` weights for perspective-correcting the label.
-- `data/reference/embedding_comparison_reference.csv`: must include `wine_name` and the four 768-dimensional columns `embedding_label_base`, `embedding_full_base`, `embedding_label_finetuned`, and `embedding_full_finetuned`. `filename` is optional.
+- `data/reference/embedding_comparison_reference.csv`: must include `wine_name` and the four 768-dimensional columns `embedding_label_base`, `embedding_full_base`, `embedding_label_finetuned`, and `embedding_full_finetuned`. An optional `product_id` disambiguates catalog entries that share a display name; `filename` is optional.
 - `data/reference/product_info.csv`: product catalog with `Название вина`, `Категория`, `Цвет`, `Регион`, `Сорт винограда`, `Описание`, `Винодельня`, `Slug`, and `Название фото`.
 - `data/test_images/`: optional local images for testing `/predict/path`.
 
@@ -109,7 +111,7 @@ python scripts/import_products_csv_to_postgres.py
 python scripts/import_csv_to_pgvector.py
 ```
 
-The product importer copies all named catalog fields to `products`. The embedding importer matches `wine_name` to `products.wine_name` after case and whitespace normalization and writes four records per CSV row to `product_embeddings`: `label` as `crop`, `full` as `full`, with separate `base` and `finetuned` model versions. Missing or duplicated product names are listed in `data/reference/unmatched_product_embeddings.csv`. Repeated source rows for one product/type/version update the existing row because of the table's unique key.
+The product importer copies all named catalog fields to `products`. The embedding importer prefers `product_id` when supplied; otherwise it matches `wine_name` only when that name identifies one catalog row. It writes four records per CSV row to `product_embeddings`: `label` as `crop`, `full` as `full`, with separate `base` and `finetuned` model versions. Missing or ambiguous product names and unknown product IDs are listed in `data/reference/unmatched_product_embeddings.csv`. Repeated source rows for one product/type/version update the existing row because of the table's unique key.
 
 ## Tests
 

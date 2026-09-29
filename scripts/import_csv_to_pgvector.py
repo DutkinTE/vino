@@ -24,12 +24,22 @@ EMBEDDING_SPECS = (
 def parse_embedding_rows(
     rows: Iterable[dict[str, str | None]],
     name_column: str = "wine_name",
-) -> list[tuple[str, str, str, str, str]]:
+    product_id_column: str = "product_id",
+) -> list[tuple[str, str, str, str, str, int | None]]:
     embeddings = []
     for row_number, row in enumerate(rows, start=2):
         product_name = (row.get(name_column) or "").strip()
         if not product_name:
             raise ValueError(f"Пустое название товара в строке {row_number}, колонка {name_column}")
+        raw_product_id = (row.get(product_id_column) or "").strip()
+        try:
+            product_id = int(raw_product_id) if raw_product_id else None
+        except ValueError as error:
+            raise ValueError(
+                f"Некорректный product_id в строке {row_number}, колонка {product_id_column}"
+            ) from error
+        if product_id is not None and product_id < 1:
+            raise ValueError(f"product_id в строке {row_number} должен быть положительным числом")
         filename = (row.get("filename") or "").strip()
         for model_version, mode, image_type in EMBEDDING_SPECS:
             column = f"embedding_{mode}_{model_version}"
@@ -52,7 +62,7 @@ def parse_embedding_rows(
                     "должен быть конечным вектором размерности 768"
                 )
             vector_literal = "[" + ",".join(str(float(value)) for value in vector) + "]"
-            embeddings.append((product_name, filename, image_type, model_version, vector_literal))
+            embeddings.append((product_name, filename, image_type, model_version, vector_literal, product_id))
     return embeddings
 
 
@@ -97,9 +107,10 @@ def main() -> None:
 
     with csv_path.open("r", encoding="utf-8-sig", newline="") as file:
         reader = csv.DictReader(file)
-        name_column = "wine_name" if "wine_name" in (reader.fieldnames or []) else "classname"
+        fieldnames = set(reader.fieldnames or [])
+        name_column = "wine_name" if "wine_name" in fieldnames else "classname"
         required = {name_column, *(f"embedding_{mode}_{version}" for version, mode, _ in EMBEDDING_SPECS)}
-        missing = required.difference(reader.fieldnames or [])
+        missing = required.difference(fieldnames)
         if missing:
             raise SystemExit(f"В CSV эмбеддингов отсутствуют колонки: {', '.join(sorted(missing))}")
         try:
@@ -113,14 +124,19 @@ def main() -> None:
         product_rows = connection.execute(
             "SELECT id, wine_name FROM products"
         ).fetchall()
+        product_ids = {int(product_id) for product_id, _ in product_rows}
         products_by_name: dict[str, list[int]] = {}
         for product_id, wine_name in product_rows:
             key = normalize_product_name(str(wine_name))
             products_by_name.setdefault(key, []).append(int(product_id))
 
         with connection.cursor() as cursor:
-            for product_name, filename, image_type, model_version, vector_literal in embeddings:
-                product_id, reason = find_product_id_by_name(product_name, products_by_name)
+            for product_name, filename, image_type, model_version, vector_literal, explicit_product_id in embeddings:
+                if explicit_product_id is not None:
+                    product_id = explicit_product_id if explicit_product_id in product_ids else None
+                    reason = None if product_id is not None else "not_found"
+                else:
+                    product_id, reason = find_product_id_by_name(product_name, products_by_name)
                 if product_id is None:
                     unmatched.append(
                         (product_name, filename, image_type, model_version, reason or "unmatched")

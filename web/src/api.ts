@@ -1,5 +1,5 @@
 export interface ProductDetails {
-  id: number;
+  id: number | null;
   wine_name: string;
   category: string | null;
   color: string | null;
@@ -7,7 +7,7 @@ export interface ProductDetails {
   grape_variety: string | null;
   description: string | null;
   winery: string | null;
-  slug: string;
+  slug: string | null;
   photo_name: string | null;
   created_at: string | null;
   updated_at: string | null;

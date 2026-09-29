@@ -54,10 +54,13 @@ class PredictionService:
         assert self.encoder is not None and self.vector_store is not None and self.product_store is not None
         vector, mode, bottle_found, label_found = self.encoder.encode(image)
         matches = self.vector_store.search(vector, mode, self.configuration.top_k)
-        products = self.product_store.fetch_by_names(
-            [str(match["classname"]) for match in matches]
+        products_by_ids = self.product_store.fetch_by_ids(
+            [int(match["product_id"]) for match in matches if "product_id" in match]
         )
-        predictions = enrich_predictions(matches, products)
+        products_by_names = self.product_store.fetch_by_names(
+            [str(match["classname"]) for match in matches if "product_id" not in match]
+        )
+        predictions = enrich_predictions(matches, products_by_names, products_by_ids)
         if not predictions:
             raise ValueError(f"Нет эталонных векторов для режима {mode}")
         return {

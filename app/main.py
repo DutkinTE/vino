@@ -29,7 +29,7 @@ class LocalImageRequest(BaseModel):
 
 
 class ProductDetails(BaseModel):
-    id: int
+    id: int | None
     wine_name: str
     category: str | None = None
     color: str | None = None
@@ -37,7 +37,7 @@ class ProductDetails(BaseModel):
     grape_variety: str | None = None
     description: str | None = None
     winery: str | None = None
-    slug: str
+    slug: str | None
     photo_name: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None

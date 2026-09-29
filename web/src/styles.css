@@ -128,6 +128,438 @@ button { cursor: pointer; }
 .desktop-gate-steps span { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; }
 .desktop-gate-steps strong { color: var(--ink); font-size: 12px; font-weight: 500; line-height: 1.35; }
 
+.scanner-shell {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+  background: #171112;
+}
+
+.scanner-shell .camera-stage {
+  --viewfinder-width: min(76vw, 320px, 49svh, calc(50svh - 100px));
+  --viewfinder-height: min(108.35vw, 457px, 70svh, calc(71.4svh - 143px));
+  --viewfinder-top: calc(50% - min(54.175vw, 228.5px, 35svh, calc(35.7svh - 71.5px)));
+  --viewfinder-corner: 22px;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #171112;
+  box-shadow: none;
+}
+
+.scanner-shell .camera-stage.has-result {
+  --viewfinder-width: min(72vw, 300px, 46svh, calc(50svh - 100px));
+  --viewfinder-height: min(102.78vw, 428px, 65.7svh, calc(71.4svh - 143px));
+  --viewfinder-top: 35%;
+}
+
+.scanner-shell .camera-video {
+  background: linear-gradient(145deg, #423638, #100d0e 78%);
+}
+
+.scanner-shell .captured-image {
+  background: #171112;
+  object-fit: cover;
+}
+
+.scanner-shell .camera-placeholder {
+  color: rgba(254, 253, 250, 0.78);
+  font-size: clamp(26px, 8vw, 42px);
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.3);
+}
+
+.scanner-shell .camera-shade {
+  background: linear-gradient(180deg, rgba(16, 12, 13, 0.52), transparent 30%, transparent 61%, rgba(16, 12, 13, 0.64));
+}
+
+.viewfinder-veil {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+}
+
+.viewfinder-blur-panel {
+  position: absolute;
+  background: rgba(16, 12, 13, 0.2);
+  backdrop-filter: blur(5px) brightness(0.7);
+  -webkit-backdrop-filter: blur(5px) brightness(0.7);
+}
+
+.viewfinder-blur-top {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--viewfinder-top);
+}
+
+.viewfinder-blur-bottom {
+  top: calc(var(--viewfinder-top) + var(--viewfinder-height));
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.viewfinder-blur-left,
+.viewfinder-blur-right {
+  top: var(--viewfinder-top);
+  width: calc((100% - var(--viewfinder-width)) / 2);
+  height: var(--viewfinder-height);
+}
+
+.viewfinder-blur-left { left: 0; }
+.viewfinder-blur-right { right: 0; }
+
+.viewfinder-blur-corner {
+  position: absolute;
+  width: var(--viewfinder-corner);
+  height: var(--viewfinder-corner);
+  background: rgba(16, 12, 13, 0.2);
+  backdrop-filter: blur(5px) brightness(0.7);
+  -webkit-backdrop-filter: blur(5px) brightness(0.7);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    92.4% 1.5%,
+    70.7% 5%,
+    50% 13.4%,
+    29.3% 29.3%,
+    13.4% 50%,
+    5% 70.7%,
+    1.5% 92.4%,
+    0 100%
+  );
+}
+
+.viewfinder-blur-corner-tl {
+  top: var(--viewfinder-top);
+  left: calc((100% - var(--viewfinder-width)) / 2);
+}
+
+.viewfinder-blur-corner-tr {
+  top: var(--viewfinder-top);
+  right: calc((100% - var(--viewfinder-width)) / 2);
+  transform: scaleX(-1);
+}
+
+.viewfinder-blur-corner-bl {
+  top: calc(var(--viewfinder-top) + var(--viewfinder-height) - var(--viewfinder-corner));
+  left: calc((100% - var(--viewfinder-width)) / 2);
+  transform: scaleY(-1);
+}
+
+.viewfinder-blur-corner-br {
+  top: calc(var(--viewfinder-top) + var(--viewfinder-height) - var(--viewfinder-corner));
+  right: calc((100% - var(--viewfinder-width)) / 2);
+  transform: scale(-1);
+}
+
+.scanner-shell .scan-frame {
+  top: var(--viewfinder-top);
+  left: 50%;
+  width: var(--viewfinder-width);
+  height: auto;
+  aspect-ratio: 240 / 343;
+  border: 3px solid rgba(254, 253, 250, 0.96);
+  border-radius: 22px;
+  transform: translateX(-50%);
+}
+
+.scanner-shell .frame-line {
+  top: 67%;
+  height: 2px;
+  background: rgba(254, 253, 250, 0.94);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  opacity: 1;
+}
+
+.scanner-shell .scan-frame:not(.is-result) .frame-line {
+  animation: scan-line-sweep 2.1s ease-in-out infinite;
+}
+
+@keyframes scan-line-sweep {
+  0% { top: 6%; opacity: 0; }
+  8% { opacity: 1; }
+  91% { top: 94%; opacity: 1; }
+  100% { top: 94%; opacity: 0; }
+}
+
+.scanner-shell .frame-corner {
+  width: 27px;
+  height: 27px;
+  border-color: rgba(254, 253, 250, 0.96);
+  filter: drop-shadow(0 1px 5px rgba(0, 0, 0, 0.26));
+}
+
+.scanner-header {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: max(24px, calc(env(safe-area-inset-top) + 8px)) 24px 0;
+}
+
+.scan-instruction {
+  height: 48px;
+  color: var(--cream);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(239, 219, 198, 0.24);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.scan-instruction {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: min(61vw, 237px);
+  min-width: 0;
+  padding: 0 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.scan-instruction > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scan-instruction-mark {
+  flex: 0 0 auto;
+  color: var(--gold-soft);
+  font-size: 15px;
+}
+
+.scanner-shell .scan-instruction .loading-spinner {
+  flex: 0 0 13px;
+}
+
+.scanner-shell .result-card {
+  position: absolute;
+  z-index: 5;
+  top: max(104px, calc(env(safe-area-inset-top) + 80px));
+  right: 16px;
+  left: 16px;
+  width: min(calc(100% - 32px), 520px);
+  max-height: 38svh;
+  margin: 0 auto;
+  padding: 0;
+  overflow-y: auto;
+  color: var(--cream);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: rise-in 300ms ease both;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.42) transparent;
+}
+
+.result-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.product-detail {
+  display: flex;
+  min-width: 0;
+  min-height: 51px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 2px rgba(108, 85, 15, 0.1), 0 4px 12px rgba(20, 15, 12, 0.12);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  text-align: left;
+}
+
+.product-detail-name {
+  grid-column: 1 / -1;
+  min-height: 51px;
+}
+
+.product-detail dt {
+  color: rgba(44, 42, 40, 0.64);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.product-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.scanner-shell .product-description {
+  margin: 8px 4px 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.scanner-shell .alternatives {
+  padding: 10px 13px;
+  color: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(27, 20, 20, 0.38);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.scanner-shell .alternatives li span:last-child {
+  color: var(--gold-soft);
+}
+
+.scanner-shell .control-area {
+  position: absolute;
+  z-index: 7;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: min(100%, 520px);
+  max-height: 43svh;
+  margin: 0 auto;
+  padding: 22px 22px max(20px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: transparent;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scanner-shell .control-area::-webkit-scrollbar,
+.scanner-shell .result-card::-webkit-scrollbar {
+  display: none;
+}
+
+.scanner-shell .control-area.has-result {
+  max-height: 27svh;
+  padding-top: 8px;
+}
+
+.scan-hint {
+  margin: 0 0 16px;
+  color: var(--cream);
+  text-align: center;
+}
+
+.scan-hint-kicker {
+  color: var(--gold-soft);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.scan-hint p {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+}
+
+.scanner-shell .primary-button {
+  justify-content: space-between;
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 24px;
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 2px rgba(108, 85, 15, 0.1), 0 4px 12px rgba(20, 15, 12, 0.16), 0 0 20px rgba(108, 85, 15, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.scanner-shell .primary-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scanner-shell .primary-button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.scanner-shell .button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-shell .button-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.scanner-shell .primary-button .loading-spinner {
+  border-color: rgba(44, 42, 40, 0.2);
+  border-top-color: var(--burgundy);
+}
+
+.scanner-shell .gallery-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  margin: 6px auto 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  text-decoration-color: rgba(255, 255, 255, 0.48);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.scanner-shell .error-card {
+  margin-bottom: 12px;
+  background: rgba(254, 253, 250, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.scanner-shell .error-card p {
+  color: #765653;
+}
+
 @media (min-width: 720px) {
   .app-shell { padding-right: 28px; padding-left: 28px; }
   .camera-stage { min-height: 580px; }
@@ -137,6 +569,16 @@ button { cursor: pointer; }
 }
 
 @media (max-width: 719px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   .desktop-gate-shell { display: none; }
 }
 

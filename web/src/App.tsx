@@ -26,13 +26,11 @@ function messageForError(error: unknown): string {
   return 'Не удалось распознать бутылку. Попробуйте ещё раз.';
 }
 
-function statusCopy(status: ScannerStatus, hasResult: boolean, hasPreview: boolean): string {
+function statusCopy(status: ScannerStatus, hasPreview: boolean): string {
   if (status === 'starting') return 'Запускаю камеру…';
   if (status === 'recognizing') return hasPreview ? 'Анализирую фото…' : 'Ищу совпадение…';
-  if (status === 'error') return 'Нужен ещё один кадр';
-  if (hasResult) return 'Снимок распознан';
-  if (status === 'ready') return 'Проверьте этикетку в рамке';
-  return 'Найдём ваше вино по этикетке';
+  if (status === 'error') return 'Попробуйте ещё раз';
+  return 'Наведите камеру на этикетку';
 }
 
 function displayValue(value: string | null): string | null {
@@ -106,48 +104,31 @@ function ProductFacts({ result }: { result: PredictionResponse }): ReactElement 
 
   return (
     <>
-      {facts.length > 0 && (
-        <dl className="facts-grid">
-          {facts.map(([label, value]) => (
-            <div className="fact" key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      {displayValue(product.description) && <p className="product-description">{product.description}</p>}
+      <dl className="result-details-grid">
+        <div className="product-detail product-detail-name">
+          <dt>Название</dt>
+          <dd>{product.wine_name}</dd>
+        </div>
+        {facts.map(([label, value]) => (
+          <div className="product-detail" key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
     </>
   );
 }
 
-function ResultCard({ result, onReset }: { result: PredictionResponse; onReset: () => void }): ReactElement {
+function ResultCard({ result }: { result: PredictionResponse }): ReactElement {
   const best = result.top5[0];
-  const alternatives = result.top5.slice(1);
   return (
-    <section className="result-card" aria-live="polite" aria-label="Результат распознавания">
-      <div className="result-heading">
-        <span className="eyebrow">{`Найдено · Сходство ${best?.similarity.toFixed(2) ?? '—'}`}</span>
-        <span className="result-mode">{result.label_found ? 'Этикетка' : 'Бутылка'}</span>
-      </div>
-      <h1>{best?.product.wine_name ?? result.top1}</h1>
+    <section
+      className="result-card"
+      aria-live="polite"
+      aria-label={`Результат распознавания: ${best?.product.wine_name ?? result.top1}`}
+    >
       <ProductFacts result={result} />
-      {alternatives.length > 0 && (
-        <details className="alternatives">
-          <summary>Ещё совпадения</summary>
-          <ul>
-            {alternatives.map((match) => (
-              <li key={`${match.classname}-${match.similarity}`}>
-                <span>{match.product.wine_name}</span>
-                <span>{match.similarity.toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      <button className="secondary-button" type="button" onClick={onReset}>
-        Сканировать снова
-      </button>
     </section>
   );
 }
@@ -157,6 +138,7 @@ export default function App(): ReactElement {
   const streamRef = useRef<MediaStream | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const sessionRef = useRef(0);
+  const autoCameraStartedRef = useRef(false);
   const isDesktop = useDesktopViewport();
   const [status, setStatus] = useState<ScannerStatus>('idle');
   const [result, setResult] = useState<PredictionResponse | null>(null);
@@ -218,6 +200,16 @@ export default function App(): ReactElement {
     }
   };
 
+  useEffect(() => {
+    if (isDesktop) {
+      autoCameraStartedRef.current = false;
+      return;
+    }
+    if (autoCameraStartedRef.current) return;
+    autoCameraStartedRef.current = true;
+    void startCamera();
+  }, [isDesktop]);
+
   const capturePhoto = async (): Promise<void> => {
     const currentVideo = videoRef.current;
     const session = sessionRef.current;
@@ -278,20 +270,12 @@ export default function App(): ReactElement {
 
   const hasCamera = Boolean(streamRef.current);
   return (
-    <main className="app-shell">
-      <div className="ambient-glow ambient-glow-one" />
-      <div className="ambient-glow ambient-glow-two" />
-      <header className="brand-bar">
-        <div>
-          <span className="brand-kicker">Vino / scan</span>
-          <span className="brand-tagline">Ваш карманный сомелье</span>
-        </div>
-        <span className={`live-pill ${hasCamera ? 'is-live' : ''}`}>
-          <span className="live-dot" /> {hasCamera ? 'камера' : 'готово'}
-        </span>
-      </header>
-
-      <section className="camera-stage" aria-label="Область сканирования" aria-busy={status === 'recognizing'}>
+    <main className="app-shell scanner-shell">
+      <section
+        className={`camera-stage ${result ? 'has-result' : ''}`}
+        aria-label="Область сканирования"
+        aria-busy={status === 'recognizing'}
+      >
         <video
           ref={videoRef}
           className={`camera-video ${previewUrl ? 'is-covered' : ''}`}
@@ -305,62 +289,91 @@ export default function App(): ReactElement {
           <img className="captured-image" src={previewUrl} alt="Выбранное фото бутылки" />
         )}
         {!previewUrl && !hasCamera && <div className="camera-placeholder" aria-hidden="true"><span>Фото бутылки<br />появится здесь</span></div>}
-        {!previewUrl && <div className="camera-shade" aria-hidden="true" />}
-        {!previewUrl && <div className="scan-frame" aria-hidden="true">
+        <div className="viewfinder-veil" aria-hidden="true">
+          <span className="viewfinder-blur-panel viewfinder-blur-top" />
+          <span className="viewfinder-blur-panel viewfinder-blur-bottom" />
+          <span className="viewfinder-blur-panel viewfinder-blur-left" />
+          <span className="viewfinder-blur-panel viewfinder-blur-right" />
+          <span className="viewfinder-blur-corner viewfinder-blur-corner-tl" />
+          <span className="viewfinder-blur-corner viewfinder-blur-corner-tr" />
+          <span className="viewfinder-blur-corner viewfinder-blur-corner-bl" />
+          <span className="viewfinder-blur-corner viewfinder-blur-corner-br" />
+        </div>
+        <div className={`scan-frame ${result ? 'is-result' : ''}`} aria-hidden="true">
           <span className="frame-corner frame-corner-tl" />
           <span className="frame-corner frame-corner-tr" />
           <span className="frame-corner frame-corner-bl" />
           <span className="frame-corner frame-corner-br" />
           <span className="frame-line" />
-        </div>}
-        {previewUrl && status === 'recognizing' && (
-          <div className="photo-loading" role="status">
-            <span className="loading-spinner" aria-hidden="true" />
-            <span>Анализирую фото…</span>
-          </div>
-        )}
-        <div className={`scan-caption ${status === 'recognizing' ? 'is-loading' : ''}`}>
-          <span className="caption-mark">✦</span>
-          <span>{statusCopy(status, Boolean(result), Boolean(previewUrl))}</span>
         </div>
-      </section>
-
-      <section className="control-area" aria-live="polite">
-        {!result && status === 'idle' && (
-          <div className="intro-copy">
-            <span className="eyebrow">Сканирование этикетки</span>
-            <h1>Найдём бутылку<br /><em>по одному кадру.</em></h1>
-            <p>Наведите камеру на этикетку — база вин сама подберёт самое близкое совпадение.</p>
+        <header className="scanner-header">
+          <div
+            className="scan-instruction"
+            aria-live="polite"
+            role={status === 'recognizing' ? 'status' : undefined}
+          >
+            {status === 'recognizing' ? (
+              <span className="loading-spinner" aria-hidden="true" />
+            ) : null}
+            <span>{statusCopy(status, Boolean(previewUrl))}</span>
           </div>
-        )}
+        </header>
+        {result && <ResultCard result={result} />}
 
-        {!result && status === 'error' && error && (
-          <div className="error-card" role="alert">
-            <span className="error-icon">!</span>
-            <div><strong>Не получилось</strong><p>{error}</p></div>
-          </div>
-        )}
+        <section className={`control-area ${result ? 'has-result' : ''}`} aria-live="polite">
+          {!result && status === 'idle' && (
+            <div className="scan-hint">
+              <span className="scan-hint-kicker">VINO / SCAN</span>
+              <p>Найдите вино по фотографии этикетки</p>
+            </div>
+          )}
 
-        {result && <ResultCard result={result} onReset={resetScan} />}
+          {!result && status === 'error' && error && (
+            <div className="error-card" role="alert">
+              <span className="error-icon">!</span>
+              <div><strong>Не получилось</strong><p>{error}</p></div>
+            </div>
+          )}
 
-        {hasCamera && !result && status === 'ready' && (
-          <button className="primary-button" type="button" onClick={() => void capturePhoto()}>
-            <span className="button-icon" aria-hidden="true">◉</span>
-            Сделать снимок
-          </button>
-        )}
+          {hasCamera && !result && status === 'ready' && (
+            <button className="primary-button" type="button" onClick={() => void capturePhoto()}>
+              <span className="primary-label">Сканировать заново</span>
+              <span className="button-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+              </span>
+            </button>
+          )}
 
-        {(!hasCamera || status === 'error') && (
-          <button className="primary-button" type="button" onClick={() => void startCamera()}>
-            <span className="button-icon" aria-hidden="true">◎</span>
-            {status === 'error' ? 'Повторить сканирование' : 'Включить камеру'}
-          </button>
-        )}
+          {status === 'starting' && (
+            <button className="primary-button" type="button" disabled>
+              <span className="primary-label">Подключаем камеру…</span>
+              <span className="button-icon" aria-hidden="true"><span className="loading-spinner" /></span>
+            </button>
+          )}
 
-        <label className="gallery-button">
-          <span>Или выбрать фото из галереи</span>
-          <input aria-label="Выбрать фото" type="file" accept="image/*" onChange={(event) => void handleGallery(event)} />
-        </label>
+          {!hasCamera && status !== 'starting' && status !== 'recognizing' && !result && (
+            <button className="primary-button" type="button" onClick={() => void startCamera()}>
+              <span className="primary-label">{status === 'error' ? 'Повторить сканирование' : 'Включить камеру'}</span>
+              <span className="button-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+              </span>
+            </button>
+          )}
+
+          {result && (
+            <button className="primary-button rescan-button" type="button" onClick={resetScan}>
+              <span className="primary-label">Сканировать заново</span>
+              <span className="button-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+              </span>
+            </button>
+          )}
+
+          <label className="gallery-button">
+            <span>Выбрать фото из галереи</span>
+            <input aria-label="Выбрать фото" type="file" accept="image/*" onChange={(event) => void handleGallery(event)} />
+          </label>
+        </section>
       </section>
     </main>
   );
